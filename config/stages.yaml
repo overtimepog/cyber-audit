@@ -1,15 +1,13 @@
 # Cyber Audit — Stage Configuration
 # 8-stage vulnerability discovery agent harness
 #
-# Models use OpenRouter-style naming:
-#   deepseek/* → DeepSeek API (DEEPSEEK_API_KEY from ~/.hermes/.env)
-#   openai/*   → Codex CLI (ChatGPT subscription via `codex exec`)
+# ALL stages run through Codex CLI (like evilsocket/audit uses Claude Code).
+# Codex handles tools natively — no custom agent loop needed.
+# Your ChatGPT subscription covers all costs.
 #
-# GPT-5.5: frontier model, better at complex reasoning, tool use, and coding.
-#           Use for: hunt (finding vulns), report (structured synthesis).
-# GPT-5.4: cheaper, still strong. Use for: gapfill, dedupe, feedback.
-#
-# Deliberate disagreement: Hunt and Validate use different providers.
+# Deliberate disagreement: Hunt and Validate use different models.
+#   Hunt:   gpt-5.5 (frontier, finds vulns aggressively)
+#   Validate: gpt-5.4 (different model, tries to disprove)
 
 gapfill_iterations: 3
 feedback_iterations: 2
@@ -23,9 +21,9 @@ stages:
       - Grep
       - Glob
       - Bash
-    max_turns: 60
+    max_turns: 2
     permission_mode: acceptEdits
-    repair_attempts: 2
+    repair_attempts: 1
 
   hunt:
     model: openai/gpt-5.5
@@ -35,18 +33,19 @@ stages:
       - Grep
       - Glob
       - Bash
-    max_turns: 25
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
 
   validate:
-    model: deepseek/deepseek-v4-pro
+    model: openai/gpt-5.4
     concurrency: 3
     tools:
       - Read
       - Grep
       - Glob
-    max_turns: 25
+      - Bash
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
 
@@ -56,7 +55,7 @@ stages:
     tools:
       - Read
       - Grep
-    max_turns: 25
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
 
@@ -65,19 +64,19 @@ stages:
     concurrency: 1
     tools:
       - Read
-    max_turns: 25
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
 
   trace:
-    model: deepseek/deepseek-v4-pro
+    model: openai/gpt-5.5
     concurrency: 3
     tools:
       - Read
       - Grep
       - Glob
       - Bash
-    max_turns: 25
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
 
@@ -87,7 +86,7 @@ stages:
     tools:
       - Read
       - Grep
-    max_turns: 25
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
 
@@ -96,6 +95,6 @@ stages:
     concurrency: 1
     tools:
       - Read
-    max_turns: 25
+    max_turns: 2
     permission_mode: acceptEdits
     repair_attempts: 1
