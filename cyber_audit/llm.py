@@ -203,19 +203,22 @@ async def _codex_completion(
     """Run a single codex exec call and return (output_text, in_est, out_est)."""
     import asyncio
 
-    # Build a single prompt combining system + user instructions
+    # Build prompt and pipe via stdin (avoids shell argument size limits)
     prompt = system_prompt + "\n\n" + user_message
 
     proc = await asyncio.create_subprocess_exec(
         "codex", "exec",
         "--skip-git-repo-check",
         "--model", model,
-        prompt,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         cwd=str(cwd),
     )
-    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
+    stdout, stderr = await asyncio.wait_for(
+        proc.communicate(input=prompt.encode("utf-8")),
+        timeout=300,
+    )
     output = stdout.decode("utf-8", errors="replace")
 
     # Try to extract the tokens-used line from stderr (Codex prints it there)
