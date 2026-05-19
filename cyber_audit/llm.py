@@ -126,6 +126,10 @@ DEEPSEEK_PRICE_OUTPUT = 0.28
 
 # OpenAI pricing by model prefix
 OPENAI_PRICING = {
+    "gpt-5.5-pro": {"input": 30.0, "output": 180.0},
+    "gpt-5.5": {"input": 5.0, "output": 30.0},
+    "gpt-5.4-mini": {"input": 0.15, "output": 0.60},
+    "gpt-5.4": {"input": 2.50, "output": 10.00},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
     "gpt-4o": {"input": 2.50, "output": 10.00},
 }

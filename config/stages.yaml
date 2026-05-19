@@ -5,6 +5,10 @@
 #   deepseek/* → DeepSeek API (DEEPSEEK_API_KEY from ~/.hermes/.env)
 #   openai/*   → Codex CLI (ChatGPT subscription via `codex exec`)
 #
+# GPT-5.5: frontier model, better at complex reasoning, tool use, and coding.
+#           Use for: hunt (finding vulns), report (structured synthesis).
+# GPT-5.4: cheaper, still strong. Use for: gapfill, dedupe, feedback.
+#
 # Deliberate disagreement: Hunt and Validate use different providers.
 
 gapfill_iterations: 3
@@ -24,7 +28,7 @@ stages:
     repair_attempts: 2
 
   hunt:
-    model: openai/gpt-5.4
+    model: openai/gpt-5.5
     concurrency: 5
     tools:
       - Read
@@ -88,7 +92,7 @@ stages:
     repair_attempts: 1
 
   report:
-    model: openai/gpt-5.4
+    model: openai/gpt-5.5
     concurrency: 1
     tools:
       - Read
