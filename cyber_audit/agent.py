@@ -396,30 +396,51 @@ async def run_agent(
 
 
 async def _execute_tool(ts: ToolsSession, tc: ToolCall) -> dict:
-    """Execute a single tool call and return the result dict."""
+    """Execute a single tool call and return the result dict.
+
+    Truncates large outputs to prevent context overflow (413 errors).
+    """
+    MAX_TOOL_OUTPUT = 3000  # chars — keep under DeepSeek's limits
     try:
         if tc.name == "Read":
-            return await ts.tool_read(
+            # Read returns structured dict — truncate content if huge
+            result = await ts.tool_read(
                 path=tc.arguments.get("path", ""),
                 offset=tc.arguments.get("offset", 1),
                 limit=tc.arguments.get("limit", 500),
             )
+            if isinstance(result, dict) and "content" in result:
+                if len(result["content"]) > MAX_TOOL_OUTPUT:
+                    result["content"] = result["content"][:MAX_TOOL_OUTPUT] + "\n... [truncated]"
+            return result
         elif tc.name == "Grep":
-            return await ts.tool_grep(
+            result = await ts.tool_grep(
                 pattern=tc.arguments.get("pattern", ""),
                 path=tc.arguments.get("path", ""),
                 glob=tc.arguments.get("glob"),
             )
+            if isinstance(result, list) and len(result) > 50:
+                result = result[:50]
+                result.append({"file": "...", "line_num": 0, "line_content": f"[truncated {len(result)} matches, showing 50]"})
+            return result
         elif tc.name == "Glob":
-            return await ts.tool_glob(
+            result = await ts.tool_glob(
                 pattern=tc.arguments.get("pattern", ""),
                 path=tc.arguments.get("path", ""),
             )
+            if isinstance(result, list) and len(result) > 200:
+                result = result[:200]
+                result.append("[truncated]")
+            return result
         elif tc.name == "Bash":
-            return await ts.tool_bash(
+            result = await ts.tool_bash(
                 command=tc.arguments.get("command", ""),
                 workdir=tc.arguments.get("workdir", "."),
             )
+            if isinstance(result, dict) and "output" in result:
+                if len(result["output"]) > MAX_TOOL_OUTPUT:
+                    result["output"] = result["output"][:MAX_TOOL_OUTPUT] + "\n... [truncated]"
+            return result
         else:
             return {"error": f"unknown tool: {tc.name}"}
     except Exception as exc:

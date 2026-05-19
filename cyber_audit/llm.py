@@ -326,20 +326,31 @@ async def chat_completion(
     if tools:
         body["tools"] = tools
 
-    # --- Send request -------------------------------------------------------
+    # --- Send request (with retry) ------------------------------------------
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{provider.base_url}/chat/completions",
-            headers=headers,
-            json=body,
-        )
-        response.raise_for_status()
-        data = response.json()
+    import asyncio as _asyncio
+    last_error = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+                response = await client.post(
+                    f"{provider.base_url}/chat/completions",
+                    headers=headers,
+                    json=body,
+                )
+                response.raise_for_status()
+                data = response.json()
+            break
+        except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.RemoteProtocolError) as exc:
+            last_error = exc
+            if attempt < 2:
+                await _asyncio.sleep(2 ** attempt)  # 1s, 2s, 4s
+    else:
+        raise last_error  # type: ignore[misc]
 
     # --- Parse response -----------------------------------------------------
     choice = data["choices"][0]
