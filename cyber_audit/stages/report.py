@@ -66,14 +66,12 @@ async def run_report(ctx, db: StateDB) -> Path:
         "traces": traces_data,
     }
 
-    prompt_dir = getattr(ctx, "prompt_dir", Path("prompts"))
-    schema_dir = getattr(ctx, "schema_dir", Path("schemas"))
 
     result = await run_agent(
         stage="report",
-        prompt_file=prompt_dir / "report.md",
+        prompt_file=ctx.prompt("report"),
         user_input=user_input,
-        schema_file=schema_dir / "report.schema.json",
+        schema_file=ctx.schema("report"),
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o"),
         cwd=getattr(ctx, "cwd", Path(".")),

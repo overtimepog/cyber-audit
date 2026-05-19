@@ -65,14 +65,12 @@ async def run_feedback(ctx, db: StateDB) -> None:
         "traces": traces_data,
     }
 
-    prompt_dir = getattr(ctx, "prompt_dir", Path("prompts"))
-    schema_dir = getattr(ctx, "schema_dir", Path("schemas"))
 
     result = await run_agent(
         stage="feedback",
-        prompt_file=prompt_dir / "feedback.md",
+        prompt_file=ctx.prompt("feedback"),
         user_input=user_input,
-        schema_file=schema_dir / "feedback.schema.json",
+        schema_file=ctx.schema("feedback"),
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o-mini"),
         cwd=getattr(ctx, "cwd", Path(".")),

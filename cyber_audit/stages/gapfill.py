@@ -62,15 +62,13 @@ async def run_gapfill(ctx, db: StateDB) -> None:
     }
 
     # Resolve prompt and schema paths
-    prompt_dir = getattr(ctx, "prompt_dir", Path("prompts"))
-    schema_dir = getattr(ctx, "schema_dir", Path("schemas"))
 
     # Call the agent
     result = await run_agent(
         stage="gapfill",
-        prompt_file=prompt_dir / "gapfill.md",
+        prompt_file=ctx.prompt("gapfill"),
         user_input=user_input,
-        schema_file=schema_dir / "gapfill.schema.json",
+        schema_file=ctx.schema("gapfill"),
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o-mini"),
         cwd=getattr(ctx, "cwd", Path(".")),

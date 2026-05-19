@@ -59,14 +59,12 @@ async def run_dedupe(ctx, db: StateDB) -> None:
         "findings": [_finding_to_dict(f) for f in ungrouped],
     }
 
-    prompt_dir = getattr(ctx, "prompt_dir", Path("prompts"))
-    schema_dir = getattr(ctx, "schema_dir", Path("schemas"))
 
     result = await run_agent(
         stage="dedupe",
-        prompt_file=prompt_dir / "dedupe.md",
+        prompt_file=ctx.prompt("dedupe"),
         user_input=user_input,
-        schema_file=schema_dir / "dedupe.schema.json",
+        schema_file=ctx.schema("dedupe"),
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o-mini"),
         cwd=getattr(ctx, "cwd", Path(".")),

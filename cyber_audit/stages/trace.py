@@ -58,14 +58,12 @@ async def run_trace(ctx, db: StateDB) -> None:
         "findings": [_finding_to_dict(f) for f in findings],
     }
 
-    prompt_dir = getattr(ctx, "prompt_dir", Path("prompts"))
-    schema_dir = getattr(ctx, "schema_dir", Path("schemas"))
 
     result = await run_agent(
         stage="trace",
-        prompt_file=prompt_dir / "trace.md",
+        prompt_file=ctx.prompt("trace"),
         user_input=user_input,
-        schema_file=schema_dir / "trace.schema.json",
+        schema_file=ctx.schema("trace"),
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "deepseek-chat"),
         cwd=getattr(ctx, "cwd", Path(".")),
