@@ -1,0 +1,94 @@
+# Cyber Audit — Stage Configuration
+# 8-stage vulnerability discovery agent harness
+# DeepSeek + OpenAI model mapping
+
+gapfill_iterations: 3
+feedback_iterations: 2
+
+stages:
+  recon:
+    model: deepseek/deepseek-v4-pro
+    concurrency: 1
+    tools:
+      - web_search
+      - read_file
+      - http_request
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  hunt:
+    model: openai/gpt-4o
+    concurrency: 5
+    tools:
+      - web_search
+      - read_file
+      - terminal
+      - http_request
+      - grep
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  validate:
+    model: deepseek/deepseek-v4-pro
+    concurrency: 3
+    tools:
+      - read_file
+      - grep
+      - terminal
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  gapfill:
+    model: openai/gpt-4o-mini
+    concurrency: 1
+    tools:
+      - web_search
+      - read_file
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  dedupe:
+    model: openai/gpt-4o-mini
+    concurrency: 1
+    tools:
+      - read_file
+      - grep
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  trace:
+    model: deepseek/deepseek-v4-pro
+    concurrency: 3
+    tools:
+      - read_file
+      - grep
+      - terminal
+      - web_search
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  feedback:
+    model: openai/gpt-4o-mini
+    concurrency: 1
+    tools:
+      - read_file
+      - write_file
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
+
+  report:
+    model: openai/gpt-4o
+    concurrency: 1
+    tools:
+      - write_file
+      - read_file
+    max_turns: 25
+    permission_mode: acceptEdits
+    repair_attempts: 1
