@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trace",
+  "type": "object",
+  "required": ["finding_ref", "reachable", "rationale"],
+  "additionalProperties": false,
+  "properties": {
+    "finding_ref": {
+      "type": "string",
+      "description": "Reference to the finding being traced (finding_id, file+line, or index)."
+    },
+    "reachable": {
+      "type": "boolean",
+      "description": "Whether attacker-controlled input can reach the vulnerable sink."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Confidence in the reachability verdict (0.0 to 1.0)."
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Detailed reasoning: how input flows from source to sink, any sanitization, blockers."
+    },
+    "trace_path": {
+      "type": "array",
+      "description": "Step-by-step data flow trace from source to sink.",
+      "items": {
+        "type": "object",
+        "required": ["file", "step", "role"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "description": "File containing this trace step." },
+          "line": { "type": "integer", "minimum": 1, "description": "Line number." },
+          "function": { "type": "string", "description": "Function or method name." },
+          "step": { "type": "string", "description": "What happens at this step in the data flow." },
+          "role": {
+            "type": "string",
+            "enum": ["source", "transform", "sink", "sanitizer", "propagation", "other"],
+            "description": "Role of this step in the data flow."
+          },
+          "snippet": { "type": "string", "description": "Relevant code snippet." }
+        }
+      }
+    },
+    "input_source": {
+      "type": "string",
+      "description": "Description of the attacker-controlled input source (e.g., HTTP query param, file upload, WebSocket message)."
+    },
+    "sink": {
+      "type": "string",
+      "description": "Description of the dangerous sink (e.g., SQL query, OS command, file write)."
+    },
+    "sanitization_present": {
+      "type": "boolean",
+      "description": "Whether any sanitization or validation was found in the trace path.",
+      "default": false
+    },
+    "sanitization_bypassable": {
+      "type": "boolean",
+      "description": "If sanitization is present, whether it can be bypassed.",
+      "default": false
+    }
+  }
+}

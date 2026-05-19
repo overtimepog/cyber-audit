@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HuntTask",
+  "type": "object",
+  "required": ["task_id", "attack_class", "scope_hint", "target_files"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": { "type": "string" },
+    "attack_class": { "type": "string" },
+    "scope_hint": { "type": "string" },
+    "target_files": { "type": "array", "items": { "type": "string" } },
+    "rationale": { "type": "string" },
+    "priority": { "type": "integer", "minimum": 1, "maximum": 5 }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Report",
+  "type": "object",
+  "required": ["metadata", "executive_summary", "findings", "statistics", "recommendations"],
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["generated_at", "repo_path"],
+      "additionalProperties": false,
+      "properties": {
+        "generated_at": { "type": "string", "description": "ISO-8601 timestamp of report generation." },
+        "repo_path": { "type": "string", "description": "Path to the audited repository." },
+        "run_id": { "type": "string", "description": "Pipeline run identifier." },
+        "total_cost_usd": { "type": "number", "description": "Total API cost for the run." },
+        "duration_seconds": { "type": "number", "description": "Total pipeline duration in seconds." },
+        "models_used": {
+          "type": "object",
+          "description": "Models used per stage.",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "executive_summary": {
+      "type": "string",
+      "description": "One-paragraph executive summary of the audit results."
+    },
+    "findings": {
+      "type": "array",
+      "description": "All confirmed and reachable vulnerability findings, grouped and deduplicated.",
+      "items": {
+        "type": "object",
+        "required": ["id", "vuln_class", "severity", "title", "description", "impact", "remediation"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "Unique finding identifier (e.g., F-001)." },
+          "cwe": { "type": "string", "description": "CWE identifier." },
+          "vuln_class": { "type": "string", "description": "Vulnerability class." },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low", "informational"] },
+          "cvss_score": { "type": "number", "minimum": 0.0, "maximum": 10.0, "description": "CVSS 3.1 base score." },
+          "cvss_vector": { "type": "string", "description": "CVSS 3.1 vector string." },
+          "title": { "type": "string", "description": "Short descriptive title." },
+          "description": { "type": "string", "description": "Detailed technical description." },
+          "impact": { "type": "string", "description": "Business/security impact if exploited." },
+          "affected_files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path"],
+              "additionalProperties": false,
+              "properties": {
+                "path": { "type": "string" },
+                "line_start": { "type": "integer" },
+                "line_end": { "type": "integer" },
+                "role": { "type": "string", "description": "source, sink, or propagator." }
+              }
+            }
+          },
+          "evidence": { "type": "string", "description": "Evidence summary including PoC results." },
+          "remediation": { "type": "string", "description": "Step-by-step remediation guidance." },
+          "references": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "OWASP, CWE, or other reference URLs."
+          },
+          "group_members": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of raw findings grouped under this canonical finding."
+          }
+        }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "required": ["total_raw_findings", "total_confirmed", "total_false_positives", "by_severity", "by_class"],
+      "additionalProperties": false,
+      "properties": {
+        "total_raw_findings": { "type": "integer", "minimum": 0, "description": "Raw findings before deduplication." },
+        "total_confirmed": { "type": "integer", "minimum": 0, "description": "Findings confirmed by validation." },
+        "total_false_positives": { "type": "integer", "minimum": 0, "description": "Findings marked as false positives." },
+        "total_reachable": { "type": "integer", "minimum": 0, "description": "Confirmed findings with a proven data flow trace." },
+        "by_severity": {
+          "type": "object",
+          "description": "Count of confirmed findings by severity.",
+          "additionalProperties": false,
+          "properties": {
+            "critical": { "type": "integer", "minimum": 0 },
+            "high": { "type": "integer", "minimum": 0 },
+            "medium": { "type": "integer", "minimum": 0 },
+            "low": { "type": "integer", "minimum": 0 },
+            "informational": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "by_class": {
+          "type": "object",
+          "description": "Count of confirmed findings by vulnerability class.",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Prioritized remediation recommendations.",
+      "items": {
+        "type": "object",
+        "required": ["priority", "title", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "priority": { "type": "integer", "minimum": 1, "description": "1=highest priority." },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "affected_findings": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Finding IDs addressed by this recommendation."
+          }
+        }
+      }
+    }
+  }
+}

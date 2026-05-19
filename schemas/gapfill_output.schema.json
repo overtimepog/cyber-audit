@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GapfillOutput",
+  "type": "object",
+  "required": ["coverage_assessment", "coverage_gaps", "new_tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "coverage_assessment": {
+      "type": "string",
+      "description": "Overall assessment of coverage: what was covered well, what was missed."
+    },
+    "coverage_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "type": "string",
+            "description": "The under-covered area: a module, directory, attack class, or code path."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why this area was missed or under-covered."
+          },
+          "suggested_files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files that should have been examined but were not."
+          },
+          "suggested_attack_classes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Attack classes that should be applied to this area."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "How critical it is to fill this gap."
+          }
+        }
+      }
+    },
+    "new_tasks": {
+      "type": "array",
+      "description": "New hunt tasks to fill the identified gaps.",
+      "items": {
+        "type": "object",
+        "required": ["attack_class", "scope_hint", "target_files"],
+        "additionalProperties": false,
+        "properties": {
+          "attack_class": { "type": "string", "description": "Attack class to hunt for." },
+          "scope_hint": { "type": "string", "description": "Narrow scope description for the hunt agent." },
+          "target_files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files to focus the hunt on."
+          },
+          "rationale": { "type": "string", "description": "Why this task fills a gap." },
+          "priority": { "type": "integer", "minimum": 1, "maximum": 5 }
+        }
+      }
+    },
+    "skip_gapfill": {
+      "type": "boolean",
+      "description": "If true, no gaps were found and the pipeline should skip re-hunting.",
+      "default": false
+    }
+  }
+}

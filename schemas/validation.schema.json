@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Validation",
+  "type": "object",
+  "required": ["finding_ref", "verdict", "reasoning"],
+  "additionalProperties": false,
+  "properties": {
+    "finding_ref": {
+      "type": "string",
+      "description": "Reference to the finding being validated (finding_id, file+line, or index)."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["confirmed", "false_positive", "uncertain"],
+      "description": "Validation verdict: confirmed (real vuln), false_positive (not exploitable), uncertain (cannot determine)."
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Detailed reasoning for the verdict. What was checked, why the verdict was reached."
+    },
+    "evidence_contradiction": {
+      "type": "string",
+      "description": "Evidence that contradicts the original finding, if applicable."
+    },
+    "severity_adjustment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "original": { "type": "string", "description": "Original severity from the finding." },
+        "adjusted": { "type": "string", "enum": ["critical", "high", "medium", "low", "informational"], "description": "Adjusted severity." },
+        "reason": { "type": "string", "description": "Why the severity was changed." }
+      }
+    },
+    "confidence_adjustment": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Adjusted confidence score after validation (0.0 to 1.0)."
+    },
+    "requires_re_hunt": {
+      "type": "boolean",
+      "description": "Whether this finding should trigger a re-hunt with adjusted scope.",
+      "default": false
+    },
+    "re_hunt_scope": {
+      "type": "string",
+      "description": "Adjusted scope hint for re-hunt if required."
+    }
+  }
+}

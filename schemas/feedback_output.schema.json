@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FeedbackOutput",
+  "type": "object",
+  "required": ["feedback_summary", "new_tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "feedback_summary": {
+      "type": "string",
+      "description": "Summary of the feedback analysis: how many reachable traces, what new hunt directions emerged."
+    },
+    "new_tasks": {
+      "type": "array",
+      "description": "New hunt tasks derived from reachable traces. Each task explores adjacent code paths, variants, or deeper exploitation.",
+      "items": {
+        "type": "object",
+        "required": ["attack_class", "scope_hint", "target_files"],
+        "additionalProperties": false,
+        "properties": {
+          "attack_class": {
+            "type": "string",
+            "description": "Attack class to hunt for (may be a variant of the original class)."
+          },
+          "scope_hint": {
+            "type": "string",
+            "description": "Narrow scope description for the hunt agent."
+          },
+          "target_files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files to focus the hunt on."
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why this task was generated from the trace feedback."
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "1=lowest, 5=highest."
+          },
+          "parent_finding_ref": {
+            "type": "string",
+            "description": "Reference to the finding whose trace inspired this task."
+          },
+          "variant_description": {
+            "type": "string",
+            "description": "Description of how this task differs from or extends the original finding."
+          }
+        }
+      }
+    },
+    "skip_feedback": {
+      "type": "boolean",
+      "description": "If true, no new tasks were generated and the pipeline should skip the feedback loop.",
+      "default": false
+    }
+  }
+}

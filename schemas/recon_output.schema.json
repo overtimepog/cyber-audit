@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReconOutput",
+  "type": "object",
+  "required": ["repo_summary", "modules", "attack_surfaces", "hunt_tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "repo_summary": {
+      "type": "string",
+      "description": "High-level summary of the repository: language stack, build system, entry points, overall purpose."
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "language", "purpose"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string", "description": "Repo-relative path to the module or directory." },
+          "language": { "type": "string", "description": "Primary language (python, javascript, go, rust, etc)." },
+          "lines": { "type": "integer", "minimum": 0, "description": "Approximate line count." },
+          "purpose": { "type": "string", "description": "What this module does." },
+          "entry_points": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Key functions, routes, or handlers."
+          },
+          "dependencies": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "External dependencies or imports relevant to security."
+          }
+        }
+      }
+    },
+    "attack_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["class", "description", "files"],
+        "additionalProperties": false,
+        "properties": {
+          "class": {
+            "type": "string",
+            "description": "Attack class: SQLi, XSS, command-injection, path-traversal, SSRF, deserialization, auth-bypass, etc."
+          },
+          "description": { "type": "string", "description": "Why this attack class is relevant to this repo." },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files likely containing relevant sinks or patterns."
+          },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"], "description": "How likely exploitable instances exist." }
+        }
+      }
+    },
+    "hunt_tasks": {
+      "type": "array",
+      "description": "Narrowly-scoped hunt tasks derived from the recon.",
+      "items": {
+        "type": "object",
+        "required": ["attack_class", "scope_hint", "target_files"],
+        "additionalProperties": false,
+        "properties": {
+          "attack_class": { "type": "string", "description": "Attack class to hunt for." },
+          "scope_hint": { "type": "string", "description": "Narrow scope description for the hunt agent." },
+          "target_files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Files to focus the hunt on."
+          },
+          "rationale": { "type": "string", "description": "Why this task exists." },
+          "priority": { "type": "integer", "minimum": 1, "maximum": 5, "description": "1=lowest, 5=highest." }
+        }
+      }
+    }
+  }
+}

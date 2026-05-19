@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DedupeOutput",
+  "type": "object",
+  "required": ["groups", "dedupe_summary"],
+  "additionalProperties": false,
+  "properties": {
+    "dedupe_summary": {
+      "type": "string",
+      "description": "Summary of deduplication: how many findings, how many unique groups, clustering approach used."
+    },
+    "groups": {
+      "type": "array",
+      "description": "Deduplication groups. Each group clusters findings that share the same root cause.",
+      "items": {
+        "type": "object",
+        "required": ["root_cause", "canonical_finding_index", "member_finding_indices"],
+        "additionalProperties": false,
+        "properties": {
+          "root_cause": {
+            "type": "string",
+            "description": "Description of the shared root cause across all members of this group."
+          },
+          "root_cause_type": {
+            "type": "string",
+            "enum": ["same_sink", "same_pattern", "same_code_path", "same_bug_class", "copy_paste", "other"],
+            "description": "Type of clustering relationship."
+          },
+          "canonical_finding_index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Index (0-based) into the input findings array for the canonical/representative finding."
+          },
+          "member_finding_indices": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0 },
+            "description": "All finding indices (0-based) that belong to this group, including the canonical."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "How confident the model is that these findings share a root cause."
+          }
+        }
+      }
+    },
+    "orphaned_finding_indices": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 },
+      "description": "Indices of findings that could not be clustered into any group."
+    }
+  }
+}
