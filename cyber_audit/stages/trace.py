@@ -64,12 +64,12 @@ async def run_trace(ctx, db: StateDB) -> None:
         prompt_file=ctx.prompt("trace"),
         user_input=user_input,
         schema_file=ctx.schema("trace"),
-        allowed_tools=getattr(ctx, "allowed_tools", []),
+        allowed_tools=list(ctx.stage("trace").tools),
         model=getattr(ctx, "model", "deepseek-chat"),
-        cwd=getattr(ctx, "cwd", Path(".")),
+        cwd=ctx.repo_path,
         artifact_dir=getattr(ctx, "artifact_dir", Path("artifacts")),
         artifact_name=f"trace-{ctx.run_id}",
-        max_turns=getattr(ctx, "max_turns", 25),
+        max_turns=ctx.stage("trace").max_turns,
     )
 
     # Process traces

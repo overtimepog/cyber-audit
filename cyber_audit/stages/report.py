@@ -72,12 +72,12 @@ async def run_report(ctx, db: StateDB) -> Path:
         prompt_file=ctx.prompt("report"),
         user_input=user_input,
         schema_file=ctx.schema("report"),
-        allowed_tools=getattr(ctx, "allowed_tools", []),
-        model=getattr(ctx, "model", "gpt-4o"),
-        cwd=getattr(ctx, "cwd", Path(".")),
+        allowed_tools=list(ctx.stage("report").tools),
+        model=ctx.stage("report").model,
+        cwd=ctx.repo_path,
         artifact_dir=ctx.artifact_dir,
         artifact_name=f"report-{ctx.run_id}",
-        max_turns=getattr(ctx, "max_turns", 25),
+        max_turns=ctx.stage("report").max_turns,
     )
 
     # Write the report markdown to a file

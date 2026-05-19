@@ -71,12 +71,12 @@ async def run_feedback(ctx, db: StateDB) -> None:
         prompt_file=ctx.prompt("feedback"),
         user_input=user_input,
         schema_file=ctx.schema("feedback"),
-        allowed_tools=getattr(ctx, "allowed_tools", []),
+        allowed_tools=list(ctx.stage("feedback").tools),
         model=getattr(ctx, "model", "gpt-4o-mini"),
-        cwd=getattr(ctx, "cwd", Path(".")),
+        cwd=ctx.repo_path,
         artifact_dir=getattr(ctx, "artifact_dir", Path("artifacts")),
         artifact_name=f"feedback-{ctx.run_id}",
-        max_turns=getattr(ctx, "max_turns", 25),
+        max_turns=ctx.stage("feedback").max_turns,
     )
 
     # Process new tasks

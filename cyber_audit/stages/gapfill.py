@@ -69,12 +69,12 @@ async def run_gapfill(ctx, db: StateDB) -> None:
         prompt_file=ctx.prompt("gapfill"),
         user_input=user_input,
         schema_file=ctx.schema("gapfill"),
-        allowed_tools=getattr(ctx, "allowed_tools", []),
+        allowed_tools=list(ctx.stage("gapfill").tools),
         model=getattr(ctx, "model", "gpt-4o-mini"),
-        cwd=getattr(ctx, "cwd", Path(".")),
+        cwd=ctx.repo_path,
         artifact_dir=getattr(ctx, "artifact_dir", Path("artifacts")),
         artifact_name=f"gapfill-{ctx.run_id}",
-        max_turns=getattr(ctx, "max_turns", 25),
+        max_turns=ctx.stage("gapfill").max_turns,
     )
 
     # Process agent output — insert new tasks
