@@ -19,6 +19,7 @@ from cyber_audit.llm import (
     LLMResponse,
     ProviderConfig,
     ToolCall,
+    _resolve_model,
     chat_completion,
 )
 from cyber_audit.tools import ToolsSession
@@ -160,7 +161,7 @@ async def run_agent(
     schema_file: Path,
     allowed_tools: list[str],
     model: str,
-    provider: ProviderConfig,
+    provider: ProviderConfig | None = None,
     cwd: Path,
     add_dirs: list[Path] | None = None,
     max_turns: int = 25,
@@ -174,7 +175,13 @@ async def run_agent(
     message is ``json.dumps(user_input)``.  On schema-validation
     failure up to *repair_attempts* follow-up turns are sent asking
     the model to fix the output.  Returns a validated ``AgentResult``.
+
+    If *provider* is None, it is resolved from the OpenRouter-style
+    *model* name (e.g. ``deepseek/deepseek-v4-pro`` -> DeepSeek API,
+    ``openai/gpt-5.4`` -> Codex CLI).
     """
+    if provider is None:
+        provider, model = _resolve_model(model)
     artifact_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = artifact_dir / f"{artifact_name}.jsonl"
     cwd.mkdir(parents=True, exist_ok=True)

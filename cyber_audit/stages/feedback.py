@@ -75,7 +75,6 @@ async def run_feedback(ctx, db: StateDB) -> None:
         schema_file=schema_dir / "feedback.schema.json",
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o-mini"),
-        provider=getattr(ctx, "provider", ProviderConfig.OPENAI),
         cwd=getattr(ctx, "cwd", Path(".")),
         artifact_dir=getattr(ctx, "artifact_dir", Path("artifacts")),
         artifact_name=f"feedback-{ctx.run_id}",

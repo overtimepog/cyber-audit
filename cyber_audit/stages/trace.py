@@ -68,7 +68,6 @@ async def run_trace(ctx, db: StateDB) -> None:
         schema_file=schema_dir / "trace.schema.json",
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "deepseek-chat"),
-        provider=getattr(ctx, "provider", ProviderConfig.DEEPSEEK),
         cwd=getattr(ctx, "cwd", Path(".")),
         artifact_dir=getattr(ctx, "artifact_dir", Path("artifacts")),
         artifact_name=f"trace-{ctx.run_id}",

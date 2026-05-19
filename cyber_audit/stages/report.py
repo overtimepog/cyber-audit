@@ -76,7 +76,6 @@ async def run_report(ctx, db: StateDB) -> Path:
         schema_file=schema_dir / "report.schema.json",
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o"),
-        provider=getattr(ctx, "provider", ProviderConfig.OPENAI),
         cwd=getattr(ctx, "cwd", Path(".")),
         artifact_dir=ctx.artifact_dir,
         artifact_name=f"report-{ctx.run_id}",

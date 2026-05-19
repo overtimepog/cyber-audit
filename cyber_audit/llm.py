@@ -2,6 +2,10 @@
 
 Provides ProviderConfig, ChatMessage, ToolCall, LLMResponse dataclasses
 and an async chat_completion() function with cost tracking.
+
+API keys are read from environment variables.  If a key is not found in
+the live environment, ~/.hermes/.env is loaded as a fallback so the
+tool works out-of-the-box with the same keys Hermes Agent uses.
 """
 
 from __future__ import annotations
@@ -9,9 +13,34 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
+
+
+# ---------------------------------------------------------------------------
+# Auto-load Hermes .env so cyber-audit sees the same keys as Hermes Agent
+# ---------------------------------------------------------------------------
+
+def _load_hermes_env() -> None:
+    """Load ~/.hermes/.env into os.environ if the file exists."""
+    env_path = Path.home() / ".hermes" / ".env"
+    if not env_path.exists():
+        return
+    with env_path.open() as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip("\"'")
+            if key and val and key not in os.environ:
+                os.environ[key] = val
+
+
+_load_hermes_env()
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +67,21 @@ ProviderConfig.OPENAI = ProviderConfig(
     base_url="https://api.openai.com/v1",
     api_key_env="OPENAI_API_KEY",
     default_model="gpt-4o",
+)
+# OpenRouter — serves OpenAI models (gpt-4o, gpt-4o-mini) when you don't
+# have a direct OpenAI key.  Uses the same OPENROUTER_API_KEY that
+# Hermes Agent is configured with.
+ProviderConfig.OPENROUTER = ProviderConfig(
+    base_url="https://openrouter.ai/api/v1",
+    api_key_env="OPENROUTER_API_KEY",
+    default_model="openai/gpt-4o",
+)
+# Codex — uses the local codex CLI (ChatGPT subscription, not API keys).
+# No HTTP calls; shells out to `codex exec` which handles tools natively.
+ProviderConfig.CODEX = ProviderConfig(
+    base_url="codex://local",
+    api_key_env="CODEX_SKIP_AUTH",  # dummy — codex uses its own OAuth
+    default_model="gpt-5.4",
 )
 
 
@@ -96,7 +140,7 @@ def _calculate_cost(
         input_cost = (input_tokens / 1_000_000) * DEEPSEEK_PRICE_INPUT
         output_cost = (output_tokens / 1_000_000) * DEEPSEEK_PRICE_OUTPUT
         return input_cost + output_cost
-    elif provider is ProviderConfig.OPENAI:
+    elif provider is ProviderConfig.OPENAI or provider is ProviderConfig.OPENROUTER:
         # Match by model prefix (e.g., "gpt-4o-mini" matches "gpt-4o-mini-2024-07-18")
         pricing = OPENAI_DEFAULT_PRICING
         for prefix, rates in OPENAI_PRICING.items():
@@ -113,6 +157,74 @@ def _calculate_cost(
 # ---------------------------------------------------------------------------
 # Chat completion
 # ---------------------------------------------------------------------------
+
+
+# OpenRouter-style model name → (ProviderConfig, api_model_name) mapping.
+# Stages.yaml uses "deepseek/deepseek-v4-pro" etc.; this resolves to the
+# actual provider and the API-facing model name.
+
+_MODEL_PROVIDER_MAP: dict[str, tuple[ProviderConfig, str]] = {}
+
+
+def _resolve_model(model: str) -> tuple[ProviderConfig, str]:
+    """Parse an OpenRouter-style model name into (provider, api_model).
+
+    ``deepseek/deepseek-v4-pro`` → (DEEPSEEK, ``deepseek-chat``)
+    ``deepseek/deepseek-flash``  → (DEEPSEEK, ``deepseek-chat``)
+    ``openai/gpt-5.4``          → (CODEX,   ``gpt-5.4``)
+    ``openai/gpt-4o``           → (CODEX,   ``gpt-4o``)
+
+    Falls back to DEEPSEEK for unknown providers.
+    """
+    if "/" in model:
+        prefix, _, rest = model.partition("/")
+        prefix = prefix.lower()
+        if prefix == "deepseek":
+            # DeepSeek API only exposes deepseek-chat and deepseek-reasoner
+            api_model = "deepseek-chat"
+            return ProviderConfig.DEEPSEEK, api_model
+        elif prefix == "openai":
+            return ProviderConfig.CODEX, rest
+    # Bare model name → default to DeepSeek
+    return ProviderConfig.DEEPSEEK, model
+
+
+async def _codex_completion(
+    model: str,
+    system_prompt: str,
+    user_message: str,
+    cwd: Path,
+    max_tokens: int = 4096,
+) -> tuple[str, int, int]:
+    """Run a single codex exec call and return (output_text, in_est, out_est)."""
+    import asyncio
+
+    # Build a single prompt combining system + user instructions
+    prompt = system_prompt + "\n\n" + user_message
+
+    proc = await asyncio.create_subprocess_exec(
+        "codex", "exec",
+        "--skip-git-repo-check",
+        "--model", model,
+        prompt,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=str(cwd),
+    )
+    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
+    output = stdout.decode("utf-8", errors="replace")
+
+    # Try to extract the tokens-used line from stderr (Codex prints it there)
+    tokens_line = ""
+    for line in stderr.decode("utf-8", errors="replace").split("\n"):
+        if "tokens used" in line.lower():
+            tokens_line = line.strip()
+
+    # Estimate token counts — Codex doesn't expose exact counts per call
+    input_est = len(prompt) // 3  # rough: ~3 chars per token
+    output_est = len(output) // 3
+
+    return output, input_est, output_est
 
 
 async def chat_completion(
@@ -143,6 +255,31 @@ async def chat_completion(
         ValueError: If the API key environment variable is not set.
         httpx.HTTPStatusError: If the API returns an error status.
     """
+    # --- Codex provider: shell out to codex CLI ---------------------------
+    if provider is ProviderConfig.CODEX:
+        # Build the full user message from all messages
+        user_text = ""
+        for msg in messages:
+            user_text += f"[{msg.role}] {msg.content}\n"
+        if not user_text:
+            user_text = "Proceed."
+
+        system_text = system_prompt or ""
+        output, in_est, out_est = await _codex_completion(
+            model=model,
+            system_prompt=system_text,
+            user_message=user_text,
+            cwd=Path.cwd(),
+            max_tokens=max_tokens,
+        )
+        return LLMResponse(
+            content=output.strip(),
+            tool_calls=[],
+            finish_reason="stop",
+            usage={"input_tokens": in_est, "output_tokens": out_est},
+            cost_usd=0.0,  # included in ChatGPT subscription
+        )
+
     # --- Read API key -------------------------------------------------------
     api_key = os.environ.get(provider.api_key_env)
     if not api_key:

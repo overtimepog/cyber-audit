@@ -73,7 +73,6 @@ async def run_gapfill(ctx, db: StateDB) -> None:
         schema_file=schema_dir / "gapfill.schema.json",
         allowed_tools=getattr(ctx, "allowed_tools", []),
         model=getattr(ctx, "model", "gpt-4o-mini"),
-        provider=getattr(ctx, "provider", ProviderConfig.OPENAI),
         cwd=getattr(ctx, "cwd", Path(".")),
         artifact_dir=getattr(ctx, "artifact_dir", Path("artifacts")),
         artifact_name=f"gapfill-{ctx.run_id}",
