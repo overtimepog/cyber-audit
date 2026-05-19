@@ -49,6 +49,7 @@ class ChatMessage:
     content: str
     tool_call_id: Optional[str] = None
     name: Optional[str] = None
+    tool_calls: Optional[List["ToolCall"]] = None
 
 
 @dataclass
@@ -160,6 +161,18 @@ async def chat_completion(
             msg_dict["tool_call_id"] = msg.tool_call_id
         if msg.name is not None:
             msg_dict["name"] = msg.name
+        if msg.tool_calls is not None:
+            msg_dict["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.arguments),
+                    },
+                }
+                for tc in msg.tool_calls
+            ]
         api_messages.append(msg_dict)
 
     # --- Build request body -------------------------------------------------
